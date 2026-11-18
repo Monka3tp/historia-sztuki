@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Historia Sztuki i Designu — Aplikacja Egzaminacyjna</title>
+  <meta name="theme-color" content="#650d2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icon.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; }
+    .font-serif-title { font-family: 'Playfair Display', serif; }
+  </style>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW reg failed:', err));
+      });
+    }
+  </script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    const ARTWORKS = [
+      { id: 1, epoch: "Prehistoria", epochOrder: 1, subStyle: "Sztuka paleolitu", title: "Jaskinia w Lascaux", altTitles: [], author: "Nieznany", year: "ok. 17–14 tys. lat p.n.e.", sortYear: -15500, wikiQuery: "Lascaux", note: "Malowidła naskalne przedstawiające zwierzęta (byki, konie, jelenie) w tzw. perspektywie skręconej." },
+      { id: 2, epoch: "Prehistoria", epochOrder: 1, subStyle: "Sztuka paleolitu", title: "Jaskinia w Altamirze", altTitles: [], author: "Nieznany", year: "ok. 35–14 tys. lat p.n.e.", sortYear: -24000, wikiQuery: "Altamira bison", note: "Polichromowane wizerunki żubrów (bizonów) wykorzystujące naturalne wypukłości skały." },
+      { id: 3, epoch: "Prehistoria", epochOrder: 1, subStyle: "Budownictwo megalityczne", title: "Stonehenge", altTitles: [], author: "Nieznany", year: "ok. 2900–1600 p.n.e.", sortYear: -2250, wikiQuery: "Stonehenge", note: "Kamienny krąg (kromlech) z trylitów pełniący funkcje kultowe i astronomiczne." },
+      { id: 4, epoch: "Prehistoria", epochOrder: 1, subStyle: "Sztuka paleolitu", title: "Wenus z Willendorfu", altTitles: [], author: "Nieznany", year: "ok. 28–25 tys. lat p.n.e.", sortYear: -26500, wikiQuery: "Venus of Willendorf", note: "Mała wapienna figurka kobieca o przerysowanych cechach płciowych — symbol płodności." },
+      { id: 5, epoch: "Prehistoria", epochOrder: 1, subStyle: "Sztuka paleolitu", title: "Wenus z Laussel", altTitles: [], author: "Nieznany", year: "ok. 25–19 tys. lat p.n.e.", sortYear: -22000, wikiQuery: "Venus of Laussel", note: "Płaskorzeźba naskalna przedstawiająca kobietę trzymającą róg żubra z 13 nacięciami." },
+      { id: 6, epoch: "Starożytność", epochOrder: 2, subStyle: "Egipt", title: "Piramida Dżesera", altTitles: [], author: "Imhotep", year: "XXVII w. p.n.e.", sortYear: -2650, wikiQuery: "Pyramid of Djoser", note: "Pierwsza piramida schodkowa w Sakkarze; Imhotep to pierwszy znany z imienia architekt w historii." },
+      { id: 7, epoch: "Starożytność", epochOrder: 2, subStyle: "Egipt", title: "Piramida Cheopsa", altTitles: ["Wielka Piramida w Gizie"], author: "Hemiunu (przypisywane) / Nieznany", year: "XXVII w. p.n.e.", sortYear: -2600, wikiQuery: "Great Pyramid of Giza", note: "Największa z piramid w Gizie, jedyny zachowany z siedmiu cudów świata starożytnego." },
+      { id: 8, epoch: "Starożytność", epochOrder: 2, subStyle: "Egipt", title: "Wielki Sfinks", altTitles: [], author: "Nieznany", year: "XXVI w. p.n.e.", sortYear: -2550, wikiQuery: "Great Sphinx of Giza", note: "Wykuty w skale posąg lwa z głową faraona (Chefrena) strzegący nekropolii w Gizie." },
+      { id: 9, epoch: "Starożytność", epochOrder: 2, subStyle: "Egipt", title: "Popiersie Nefretete", altTitles: ["Popiersie Nefertiti"], author: "Totmes", year: "XIV w. p.n.e.", sortYear: -1345, wikiQuery: "Nefertiti bust", note: "Polichromowane popiersie z okresu amarneńskiego, ukazujące małżonkę Echnatona." },
+      { id: 10, epoch: "Starożytność", epochOrder: 2, subStyle: "Egipt", title: "Złota maska Tutanchamona", altTitles: [], author: "Nieznany", year: "XIV w. p.n.e.", sortYear: -1323, wikiQuery: "Mask of Tutankhamun", note: "Maska pośmiertna ze złota inkrustowana lapis lazuli i półszlachetnymi kamieniami." },
+      { id: 11, epoch: "Starożytność", epochOrder: 2, subStyle: "Mezopotamia", title: "Zikkurat z Ur", altTitles: [], author: "Nieznany", year: "ok. 2100–2000 p.n.e.", sortYear: -2050, wikiQuery: "Ziggurat of Ur", note: "Sumerdyjska świątynia tarasowa z suszonej i wypalanej cegły poświęcona bogu księżyca Nannie." },
+      { id: 12, epoch: "Starożytność", epochOrder: 2, subStyle: "Mezopotamia", title: "Stela z kodeksem Hammurabiego", altTitles: [], author: "Nieznany", year: "XVIII w. p.n.e.", sortYear: -1750, wikiQuery: "Code of Hammurabi stele", note: "Bazaltowa stela z pismem klinowym oraz płaskorzeźbą króla przed bogiem Szamaszem." },
+      { id: 13, epoch: "Starożytność", epochOrder: 2, subStyle: "Mezopotamia", title: "„Polowanie na lwy” z pałacu w Niniwie", altTitles: ["Polowanie na lwy Assurbanipala"], author: "Nieznany", year: "VII w. p.n.e.", sortYear: -645, wikiQuery: "Lion Hunt of Ashurbanipal", note: "Asyryjski płaskorzeźbiony fryz słynący z niezwykle realistycznego oddania dynamiki i cierpienia zwierząt." },
+      { id: 14, epoch: "Starożytność", epochOrder: 2, subStyle: "Mezopotamia", title: "Brama Isztar", altTitles: [], author: "Nieznany", year: "VI w. p.n.e.", sortYear: -575, wikiQuery: "Ishtar Gate", note: "Babilońska brama z glazurowanej na niebiesko cegły zdobiona reliefami smoków (muszchuszu) i turów." },
+      { id: 15, epoch: "Starożytność", epochOrder: 2, subStyle: "Grecja", title: "„Partenon” w Atenach", altTitles: ["Partenon"], author: "Iktinos i Kallikrates", year: "V w. p.n.e.", sortYear: -447, wikiQuery: "Parthenon", note: "Dorycka świątynia Ateny Partenos na Akropolu z zastosowaniem krzywizn optycznych (entazis)." },
+      { id: 16, epoch: "Starożytność", epochOrder: 2, subStyle: "Grecja", title: "„Dyskobol”", altTitles: ["Dyskobol"], author: "Myron", year: "V w. p.n.e.", sortYear: -450, wikiQuery: "Discobolus", note: "Rzeźba z okresu klasycznego ukazująca sportowca w kulminacyjnym momencie skrętu ciała przed rzutem." },
+      { id: 17, epoch: "Starożytność", epochOrder: 2, subStyle: "Grecja", title: "„Doryforos”", altTitles: ["Niosący włócznię"], author: "Poliklet", year: "V w. p.n.e.", sortYear: -440, wikiQuery: "Doryphoros", note: "Wcielenie kanonu proporcji (głowa = 1/8 ciała) i klasycznego kontrapostu." },
+      { id: 18, epoch: "Starożytność", epochOrder: 2, subStyle: "Grecja", title: "„Afrodyta z Knidos”", altTitles: [], author: "Praksyteles", year: "IV w. p.n.e.", sortYear: -350, wikiQuery: "Aphrodite of Knidos", note: "Pierwszy w sztuce greckiej pełnoplastyczny akt kobiecy o miękkim modelunku (esowata linia ciała)." },
+      { id: 19, epoch: "Starożytność", epochOrder: 2, subStyle: "Grecja", title: "„Nike z Samotraki”", altTitles: [], author: "Nieznany (Pytokritos?)", year: "II w. p.n.e.", sortYear: -190, wikiQuery: "Winged Victory of Samothrace", note: "Hellenistyczna rzeźba bogini zwycięstwa na dziobie okrętu z dramatycznie rozwianymi szatami." },
+      { id: 20, epoch: "Starożytność", epochOrder: 2, subStyle: "Rzym", title: "Panteon w Rzymie", altTitles: [], author: "Nieznany (przypisywany Apollodorosowi z Damaszku)", year: "II w. n.e.", sortYear: 125, wikiQuery: "Pantheon, Rome", note: "Świątynia wszystkich bogów z monumentalną kasetonową kopułą z betonu i otworem (oculusem)." },
+      { id: 21, epoch: "Starożytność", epochOrder: 2, subStyle: "Rzym", title: "Koloseum", altTitles: ["Amfiteatr Flawiuszów"], author: "Nieznany", year: "I w. n.e.", sortYear: 80, wikiQuery: "Colosseum", note: "Czterokondygnacyjny amfiteatr wykorzystujący spiętrzenie porządków (toskański, joński, koryncki)." },
+      { id: 22, epoch: "Starożytność", epochOrder: 2, subStyle: "Rzym", title: "„Kolumna Trajana”", altTitles: [], author: "Apollodoros z Damaszku", year: "II w. n.e.", sortYear: 113, wikiQuery: "Trajan's Column", note: "Kolumna triumfalna ze spiralnym fryzem reliefowym opisującym wojny cesarza Trajana z Dakami." },
+      { id: 23, epoch: "Starożytność", epochOrder: 2, subStyle: "Rzym", title: "„Pomnik konny Marka Aureliusza”", altTitles: [], author: "Nieznany", year: "II w. n.e.", sortYear: 175, wikiQuery: "Equestrian Statue of Marcus Aurelius", note: "Jedyny zachowany antyczny rzymski posąg konny z brązu; wzór dla rzeźby renesansowej." },
+      { id: 24, epoch: "Średniowiecze", epochOrder: 3, subStyle: "Bizancjum", title: "Hagia Sophia", altTitles: ["Kościół Mądrości Bożej"], author: "Antemiusz z Tralles i Izydor z Miletu", year: "VI w.", sortYear: 537, wikiQuery: "Hagia Sophia", note: "Bazylika kopułowa w Konstantynopolu z ogromną kopułą wspartą na pendentywach." },
+      { id: 25, epoch: "Średniowiecze", epochOrder: 3, subStyle: "Bizancjum", title: "Mozaiki z San Vitale (cesarz Justynian i cesarzowa Teodora)", altTitles: ["Mozaiki z Rawenny"], author: "Nieznany", year: "VI w.", sortYear: 547, wikiQuery: "Justinian mosaic San Vitale", note: "Hieratyczne, frontalne przedstawienia na złotym tle bez głębi przestrzennej." },
+      { id: 26, epoch: "Średniowiecze", epochOrder: 3, subStyle: "Sztuka preromańska", title: "Księga z Kells", altTitles: ["Book of Kells"], author: "Mnisi iroszkoccy (Nieznany)", year: "ok. 800 r.", sortYear: 800, wikiQuery: "Book of Kells", note: "Bogato iluminowany ewangeliarz insularny ze skomplikowaną ornamentyką plecionkową i zwierzęcą." },
+      { id: 27, epoch: "Średniowiecze", epochOrder: 3, subStyle: "Styl romański", title: "White Tower (centralna część Tower of London)", altTitles: ["White Tower"], author: "Gundulf z Rochester (przypisywane)", year: "XI w.", sortYear: 1078, wikiQuery: "White Tower (Tower of London)", note: "Masywny donżon o grubych murach, małych oknach i narożnych basztach o charakterze obronnym." },
+      { id: 28, epoch: "Średniowiecze", epochOrder: 3, subStyle: "Styl romański", title: "„Kuszenie Ewy”", altTitles: ["Kuszenie Ewy z katedry w Autun"], author: "Gislebertus (mistrz z Autun)", year: "XII w.", sortYear: 1130, wikiQuery: "Gislebertus Eve", note: "Płaskorzeźba z nadproża portalu katedry św. Łazarza w Autun; wydłużona, ekspresyjna sylwetka." },
+      { id: 29, epoch: "Średniowiecze", epochOrder: 3, subStyle: "Gotyk", title: "Katedra w Chartres", altTitles: [], author: "Nieznany", year: "XIII w.", sortYear: 1220, wikiQuery: "Chartres Cathedral", note: "Klasyczny gotyk francuski z łukami przyporowymi, sklepieniami krzyżowo-żebrowymi i słynnymi witrażami." },
+      { id: 30, epoch: "Średniowiecze", epochOrder: 3, subStyle: "Gotyk", title: "tzw. „Piękna Madonna z Wrocławia”", altTitles: ["Piękna Madonna z Wrocławia"], author: "Nieznany (Mistrz Pięknych Madonn)", year: "XIV w.", sortYear: 1390, wikiQuery: "Beautiful Madonna of Wroclaw", note: "Czołowe dzieło stylu pięknego (gotyk międzynarodowy): liryzm, delikatny uśmiech i kaskady fałd." },
+      { id: 31, epoch: "Średniowiecze", epochOrder: 3, subStyle: "Gotyk", title: "„Godzinki księcia de Berry”", altTitles: ["Très Riches Heures du Duc de Berry"], author: "Bracia Limbourg", year: "XV w.", sortYear: 1416, wikiQuery: "Très Riches Heures du Duc de Berry", note: "Iluminowany modlitewnik z cyklem miniatur kalendarzowych ukazujących życie dworu i chłopów." },
+      { id: 32, epoch: "Renesans", epochOrder: 4, subStyle: "Renesans", title: "„Ostatnia wieczerza”", altTitles: [], author: "Leonardo da Vinci", year: "XV w.", sortYear: 1498, wikiQuery: "The Last Supper Leonardo da Vinci", note: "Malowidło ścienne w Mediolanie z perspektywą zbieżną skupioną na postaci Chrystusa i studium emocji apostołów." },
+      { id: 33, epoch: "Renesans", epochOrder: 4, subStyle: "Renesans", title: "„Madonna Sykstyńska”", altTitles: [], author: "Rafael Santi", year: "XVI w.", sortYear: 1513, wikiQuery: "Sistine Madonna Raphael", note: "Kompozycja piramidalna pełna harmonii i spokoju, ze słynnymi dwoma aniołkami u dołu." },
+      { id: 34, epoch: "Renesans", epochOrder: 4, subStyle: "Renesans", title: "„Dawid”", altTitles: [], author: "Michał Anioł", year: "XVI w.", sortYear: 1504, wikiQuery: "David by Michelangelo", note: "Marmurowy posąg ukazujący biblijnego bohatera w kontrapoście w chwili skupienia przed walką z Goliatem." },
+      { id: 35, epoch: "Renesans", epochOrder: 4, subStyle: "Renesans", title: "„Stworzenie Adama”", altTitles: [], author: "Michał Anioł", year: "XVI w.", sortYear: 1511, wikiQuery: "The Creation of Adam", note: "Fresk na sklepieniu Kaplicy Sykstyńskiej symbolizujący przekazanie iskry życia człowiekowi." },
+      { id: 36, epoch: "Renesans", epochOrder: 4, subStyle: "Renesans", title: "„Narodziny Wenus”", altTitles: [], author: "Sandro Botticelli", year: "XV w.", sortYear: 1485, wikiQuery: "The Birth of Venus Botticelli", note: "Florencki renesans (quattrocento): nawiązanie do mitologii antycznej, subtelna linia i brak ciężkiego światłocienia." },
+      { id: 37, epoch: "Renesans", epochOrder: 4, subStyle: "Renesans", title: "„Tempietto”", altTitles: ["Tempietto San Pietro in Montorio"], author: "Donato Bramante", year: "XVI w.", sortYear: 1502, wikiQuery: "Tempietto Bramante", note: "Budowla na planie centralnym w Rzymie otoczona kolumnadą dorycką — ideał architektury dojrzałego renesansu." },
+      { id: 38, epoch: "Renesans", epochOrder: 4, subStyle: "Renesans", title: "Kopuła katedry we Florencji", altTitles: ["Santa Maria del Fiore kopuła"], author: "Filippo Brunelleschi", year: "XV w.", sortYear: 1436, wikiQuery: "Florence Cathedral dome", note: "Dwupowłokowa, ośmioboczna kopuła wzniesiona bez tradycyjnych rusztowań — przełom inżynieryjny renesansu." },
+      { id: 39, epoch: "Manieryzm", epochOrder: 5, subStyle: "Manieryzm", title: "„Madonna z długą szyją”", altTitles: [], author: "Parmigianino", year: "XVI w.", sortYear: 1535, wikiQuery: "Madonna with the Long Neck", note: "Świadome odejście od klasycznych proporcji: wydłużone szyje, palce i sylwetki, nienaturalna poza i asymetria." },
+      { id: 40, epoch: "Barok", epochOrder: 6, subStyle: "Barok", title: "„Nawrócenie św. Pawła”", altTitles: ["Nawrócenie w drodze do Damaszku"], author: "Caravaggio", year: "XVII w.", sortYear: 1601, wikiQuery: "Conversion on the Way to Damascus Caravaggio", note: "Tenebryzm — dramatyczny kontrast ostrego światła i głębokiego mroku, realizm w ukazaniu postaci i konia." },
+      { id: 41, epoch: "Barok", epochOrder: 6, subStyle: "Barok", title: "„Wymarsz strzelców” / „Straż nocna”", altTitles: ["Straż nocna", "Wymarsz strzelców"], author: "Rembrandt van Rijn", year: "XVII w.", sortYear: 1642, wikiQuery: "The Night Watch Rembrandt", note: "Dynamiczny portret zbiorowy kompanii strzeleckiej z mistrzowską grą złotego światła i ruchu." },
+      { id: 42, epoch: "Barok", epochOrder: 6, subStyle: "Barok", title: "„Dziewczyna z perłą”", altTitles: [], author: "Jan Vermeer van Delft", year: "XVII w.", sortYear: 1665, wikiQuery: "Girl with a Pearl Earring", note: "Mistrzostwo malarstwa holenderskiego: miękkie światło, kontrast błękitu i żółcieni oraz intymne spojrzenie." },
+      { id: 43, epoch: "Barok", epochOrder: 6, subStyle: "Barok", title: "„Las Meninas” („Panny Dworskie”)", altTitles: ["Las Meninas", "Panny Dworskie"], author: "Diego Velázquez", year: "XVII w.", sortYear: 1656, wikiQuery: "Las Meninas", note: "Złożona gra przestrzeni i spojrzeń na dworze króla Filipa IV (para królewska widoczna w lustrze w głębi)." },
+      { id: 44, epoch: "Barok", epochOrder: 6, subStyle: "Barok", title: "„Ekstaza św. Teresy”", altTitles: [], author: "Gianlorenzo Bernini", year: "XVII w.", sortYear: 1652, wikiQuery: "Ecstasy of Saint Teresa", note: "Teatralna rzeźba barokowa łącząca marmur, złocone promienie oraz ukryte źródło światła." },
+      { id: 45, epoch: "Barok", epochOrder: 6, subStyle: "Barok", title: "Kościół „San Carlo alle Quattro Fontane”", altTitles: ["Św. Karola przy Czterech Fontannach"], author: "Francesco Borromini", year: "XVII w.", sortYear: 1641, wikiQuery: "San Carlo alle Quattro Fontane", note: "Falująca, wklęsło-wypukła fasada oraz owalny plan nadające architekturze rzeźbiarski ruch." },
+      { id: 46, epoch: "Rokoko", epochOrder: 7, subStyle: "Rokoko", title: "„Huśtawka”", altTitles: [], author: "Jean-Honoré Fragonard", year: "XVIII w.", sortYear: 1767, wikiQuery: "The Swing Fragonard", note: "Lekka, frywolna scena dworska (fête galante) w pastelowych barwach i bujnej, bajkowej scenerii ogrodu." },
+      { id: 47, epoch: "Klasycyzm", epochOrder: 8, subStyle: "Klasycyzm", title: "„Przysięga Horacjuszy”", altTitles: [], author: "Jacques-Louis David", year: "XVIII w.", sortYear: 1784, wikiQuery: "Oath of the Horatii", note: "Manifest klasycyzmu: patriotyczna tematyka antyczna, surowa geometria, wyraźny rysunek i podział na trzy arkady." },
+      { id: 48, epoch: "Klasycyzm", epochOrder: 8, subStyle: "Klasycyzm", title: "„Śmierć Marata”", altTitles: [], author: "Jacques-Louis David", year: "XVIII w.", sortYear: 1793, wikiQuery: "The Death of Marat", note: "Heroizacja bohatera rewolucji francuskiej w oszczędnej, ascetycznej kompozycji." },
+      { id: 49, epoch: "Klasycyzm", epochOrder: 8, subStyle: "Klasycyzm", title: "„Psyche budzona przez pocałunek Kupidyna” („Amor i Psyche”)", altTitles: ["Amor i Psyche"], author: "Antonio Canova", year: "XVIII w.", sortYear: 1793, wikiQuery: "Psyche Revived by Cupid's Kiss", note: "Gładko polerowany biały marmur, idealizacja form antycznych i harmonijna kompozycja krzyżowa." },
+      { id: 50, epoch: "Klasycyzm", epochOrder: 8, subStyle: "Klasycyzm", title: "Panteon w Paryżu", altTitles: [], author: "Jacques-Germain Soufflot", year: "XVIII w.", sortYear: 1790, wikiQuery: "Panthéon, Paris", note: "Monumentalna budowla łącząca antyczny portyk kolumnowy z wielką kopułą na bębnie." },
+      { id: 51, epoch: "Romantyzm", epochOrder: 9, subStyle: "Romantyzm", title: "„Rozstrzelanie powstańców madryckich 3 maja”", altTitles: ["3 maja 1808"], author: "Francisco Goya", year: "XIX w.", sortYear: 1814, wikiQuery: "The Third of May 1808", note: "Dramatyczny protest przeciw okrucieństwu wojny; bezimienna maszyna egzekucyjna kontra ekspresyjna postać w białej koszuli." },
+      { id: 52, epoch: "Romantyzm", epochOrder: 9, subStyle: "Romantyzm", title: "„Śmierć Sardanapala”", altTitles: [], author: "Eugène Delacroix", year: "XIX w.", sortYear: 1827, wikiQuery: "The Death of Sardanapalus", note: "Egzotyka, gwałtowna dynamika po przekątnej, bogaty koloryt i emocjonalny patos." },
+      { id: 53, epoch: "Romantyzm", epochOrder: 9, subStyle: "Romantyzm", title: "„Burza śnieżna”", altTitles: ["Burza śnieżna - parowiec u wejścia do portu"], author: "William Turner", year: "XIX w.", sortYear: 1842, wikiQuery: "Snow Storm Turner", note: "Potęga żywiołów natury ukazana poprzez wirujące plamy barwne i światło zacierające kontury." },
+      { id: 54, epoch: "Romantyzm", epochOrder: 9, subStyle: "Romantyzm", title: "„Mnich nad morzem”", altTitles: [], author: "Caspar David Friedrich", year: "XIX w.", sortYear: 1810, wikiQuery: "The Monk by the Sea", note: "Samotność jednostki wobec nieskończoności przyrody i absolutu; radykalnie uproszczony pejzaż." },
+      { id: 55, epoch: "Romantyzm", epochOrder: 9, subStyle: "Romantyzm", title: "„Tratwa Meduzy”", altTitles: [], author: "Théodore Géricault", year: "XIX w.", sortYear: 1819, wikiQuery: "The Raft of the Medusa", note: "Współczesna tragedia rozbitków ujęta w monumentalną, piramidalną kompozycję pełną grozy i nadziei." },
+      { id: 56, epoch: "Realizm", epochOrder: 10, subStyle: "Realizm", title: "„Kamieniarze”", altTitles: [], author: "Gustave Courbet", year: "XIX w.", sortYear: 1849, wikiQuery: "The Stone Breakers", note: "Bezkompromisowe przedstawienie ciężkiej pracy fizycznej zwykłych robotników bez idealizacji." },
+      { id: 57, epoch: "Realizm", epochOrder: 10, subStyle: "Realizm", title: "„Babie lato”", altTitles: [], author: "Józef Chełmoński", year: "XIX w.", sortYear: 1875, wikiQuery: "Babie lato Chełmoński", note: "Polski realizm: prawda o życiu wsi, stonowana paleta barw i obserwacja natury." },
+      { id: 58, epoch: "Impresjonizm", epochOrder: 11, subStyle: "Impresjonizm", title: "„Impresja. Wschód słońca”", altTitles: [], author: "Claude Monet", year: "2 poł. XIX w.", sortYear: 1872, wikiQuery: "Impression, Sunrise", note: "Obraz-manifest, od którego kierunek wziął nazwę; uchwycenie ulotnego wrażenia światła i mgły w porcie w Hawrze." },
+      { id: 59, epoch: "Impresjonizm", epochOrder: 11, subStyle: "Impresjonizm", title: "„Parasolki”", altTitles: [], author: "Auguste Renoir", year: "2 poł. XIX w.", sortYear: 1886, wikiQuery: "The Umbrellas Renoir", note: "Scena z życia codziennego Paryża z charakterystyczną grą światła i chłodną tonacją błękitów." },
+      { id: 60, epoch: "Impresjonizm", epochOrder: 11, subStyle: "Impresjonizm", title: "„Primaballerina”", altTitles: ["Gwiazda", "L'Étoile"], author: "Edgar Degas", year: "2 poł. XIX w.", sortYear: 1878, wikiQuery: "L'Étoile Edgar Degas", note: "Pastel ukazujący tancerkę w sztucznym świetle rampy w nietypowym, asymetrycznym kadrze z góry." },
+      { id: 61, epoch: "Impresjonizm", epochOrder: 11, subStyle: "Impresjonizm", title: "„Czternastoletnia tancerka”", altTitles: [], author: "Edgar Degas", year: "2 poł. XIX w.", sortYear: 1881, wikiQuery: "Little Dancer of Fourteen Years", note: "Rzeźba z brązu ubrana w prawdziwą tiulową spódniczkę, baletki i jedwabną wstążkę." },
+      { id: 62, epoch: "Postimpresjonizm", epochOrder: 12, subStyle: "Puantylizm / Dywizjonizm", title: "„Niedzielne popołudnie na wyspie Grande Jatte”", altTitles: [], author: "Georges Seurat", year: "2 poł. XIX w.", sortYear: 1886, wikiQuery: "A Sunday Afternoon on the Island of La Grande Jatte", note: "Puantylizm — budowanie obrazu z tysięcy drobnych, czystych kropek koloru mieszających się w oku widza." },
+      { id: 63, epoch: "Postimpresjonizm", epochOrder: 12, subStyle: "Postimpresjonizm", title: "„Słoneczniki”", altTitles: [], author: "Vincent van Gogh", year: "2 poł. XIX w.", sortYear: 1888, wikiQuery: "Sunflowers Van Gogh", note: "Ekspresyjna faktura impastu i intensywna gama żółcieni wyrażająca emocje artysty." },
+      { id: 64, epoch: "Postimpresjonizm", epochOrder: 12, subStyle: "Postimpresjonizm", title: "„Wielkie kąpiące się”", altTitles: [], author: "Paul Cézanne", year: "2 poł. XIX w.", sortYear: 1906, wikiQuery: "The Large Bathers Cézanne", note: "Geometryzacja form i budowanie przestrzeni plamą barwną — zapowiedź kubizmu." },
+      { id: 65, epoch: "Postimpresjonizm", epochOrder: 12, subStyle: "Syntetyzm / Symbolizm", title: "„Skąd przychodzimy? Kim jesteśmy? Dokąd zmierzamy?”", altTitles: [], author: "Paul Gauguin", year: "2 poł. XIX w.", sortYear: 1897, wikiQuery: "Where Do We Come From? What Are We? Where Are We Going?", note: "Syntetyzm i symbolizm: płaskie plamy intensywnego koloru obwiedzione konturem, egzotyka Tahiti." },
+      { id: 66, epoch: "Secesja", epochOrder: 13, subStyle: "Secesja (Art Nouveau)", title: "„Hotel Tassel”", altTitles: [], author: "Victor Horta", year: "koniec XIX w.", sortYear: 1893, wikiQuery: "Hôtel Tassel", note: "Pierwsza w pełni secesyjna kamienica w Brukseli z widoczną konstrukcją żeliwną i falującymi motywami roślinnymi." },
+      { id: 67, epoch: "Secesja", epochOrder: 13, subStyle: "Secesja (Modernismo)", title: "„Sagrada Familia”", altTitles: [], author: "Antoni Gaudí", year: "przełom XIX/XX w.", sortYear: 1882, wikiQuery: "Sagrada Familia", note: "Organiczna architektura inspirowana formami natury, parabolicznymi łukami i kolorową mozaiką." },
+      { id: 68, epoch: "Secesja", epochOrder: 13, subStyle: "Secesja wiedeńska", title: "„Pocałunek”", altTitles: [], author: "Gustav Klimt", year: "początek XX w.", sortYear: 1908, wikiQuery: "The Kiss Gustav Klimt", note: "Dekoracyjność, płaskość tła, bogata geometryczna ornamentyka oraz użycie płatków złota." },
+      { id: 69, epoch: "Secesja", epochOrder: 13, subStyle: "Młoda Polska / Secesja", title: "„Macierzyństwo”", altTitles: [], author: "Stanisław Wyspiański", year: "pocz. XX w.", sortYear: 1905, wikiQuery: "Macierzyństwo Stanisław Wyspiański", note: "Pastel o falistej, giętkiej linii konturu i stylizowanych motywach roślinnych typowych dla secesji." },
+      { id: 70, epoch: "Awangarda i neoawangarda", epochOrder: 14, subStyle: "Ekspresjonizm", title: "„Krzyk”", altTitles: [], author: "Edvard Munch", year: "koniec XIX w.", sortYear: 1893, wikiQuery: "The Scream Edvard Munch", note: "Ekspresjonizm: deformacja linii i jaskrawe barwy wyrażające egzystencjalny lęk człowieka." },
+      { id: 71, epoch: "Awangarda i neoawangarda", epochOrder: 14, subStyle: "Fowizm", title: "„Taniec”", altTitles: [], author: "Henri Matisse", year: "pocz. XX w.", sortYear: 1910, wikiQuery: "Dance Henri Matisse", note: "Fowizm: wyzwolenie czystego, nierealistycznego koloru (czerwień, błękit, zieleń) i uproszczenie formy." },
+      { id: 72, epoch: "Awangarda i neoawangarda", epochOrder: 14, subStyle: "Futuryzm", title: "„Dynamizm psa na smyczy”", altTitles: [], author: "Giacomo Balla", year: "1 poł. XX w.", sortYear: 1912, wikiQuery: "Dynamism of a Dog on a Leash", note: "Futuryzm: próba uchwycenia ruchu i prędkości poprzez zwielokrotnienie kolejnych faz ruchu łap i smyczy." },
+      { id: 73, epoch: "Awangarda i neoawangarda", epochOrder: 14, subStyle: "Dadaizm", title: "„Fontanna”", altTitles: [], author: "Marcel Duchamp", year: "I poł. XX w.", sortYear: 1917, wikiQuery: "Fountain Duchamp", note: "Dadaizm: przedmiot gotowy (ready-made) — odwrócony pisuar podpisany „R. Mutt”, kwestionujący definicję dzieła sztuki." },
+      { id: 74, epoch: "Awangarda i neoawangarda", epochOrder: 14, subStyle: "Suprematyzm / Abstrakcja geometryczna", title: "„Czarny kwadrat na białym tle”", altTitles: [], author: "Kazimierz Malewicz", year: "1 poł. XX w.", sortYear: 1915, wikiQuery: "Black Square Malevich", note: "Suprematyzm (abstrakcja geometryczna): całkowita rezygnacja z przedstawiania świata widzialnego na rzecz czystej formy." },
+      { id: 75, epoch: "Awangarda i neoawangarda", epochOrder: 14, subStyle: "Kubizm / Surrealizm", title: "„Guernica”", altTitles: [], author: "Pablo Picasso", year: "1 poł. XX w.", sortYear: 1937, wikiQuery: "Guernica Picasso", note: "Kubizm i surrealizm: antywojenne dzieło w monochromatycznej tonacji łączące deformację kubistyczną z symboliką surrealistyczną." },
+      { id: 76, epoch: "Awangarda i neoawangarda", epochOrder: 14, subStyle: "Surrealizm", title: "„Trwałość pamięci”", altTitles: ["Miękkie zegary"], author: "Salvador Dalí", year: "1 poł. XX w.", sortYear: 1931, wikiQuery: "The Persistence of Memory", note: "Surrealizm: oniryczna wizja z miękkimi, topniejącymi zegarami namalowana z fotograficzną precyzją." },
+      { id: 77, epoch: "Awangarda i neoawangarda", epochOrder: 14, subStyle: "Modernizm", title: "Kaplica Notre Dame du Haut („Kaplica w Ronchamp”)", altTitles: ["Kaplica w Ronchamp", "Kaplica Notre Dame du Haut"], author: "Le Corbusier", year: "1 poł. XX w.", sortYear: 1955, wikiQuery: "Notre-Dame du Haut", note: "Modernizm powojenny: rzeźbiarska, ekspresyjna bryła z żelbetu i nieregularne, kolorowe świetliki." },
+      { id: 78, epoch: "Awangarda i neoawangarda", epochOrder: 14, subStyle: "Pop-art", title: "„Puszka zupy Campbell”", altTitles: [], author: "Andy Warhol", year: "2 poł. XX w.", sortYear: 1962, wikiQuery: "Campbell's Soup Cans", note: "Pop-art: przeniesienie ikon kultury masowej i reklamy do świata sztuki przy użyciu techniki sitodruku." },
+      { id: 79, epoch: "Ikony designu", epochOrder: 15, subStyle: "Styl Biedermeier", title: "Krzesło nr 14", altTitles: ["Krzesło thonetowskie"], author: "Michael Thonet", year: "2 poł. XIX w.", sortYear: 1859, wikiQuery: "Thonet chair No. 14", note: "Styl Biedermeier / produkcja przemysłowa: pierwsze krzesło z drewna bukowego giętego na parze przeznaczone do masowego montażu." },
+      { id: 80, epoch: "Ikony designu", epochOrder: 15, subStyle: "Secesja", title: "Plakat dla Moulin Rouge", altTitles: ["Moulin Rouge: La Goulue"], author: "Henri de Toulouse-Lautrec", year: "koniec XIX w.", sortYear: 1891, wikiQuery: "Moulin Rouge: La Goulue", note: "Secesja: barwna litografia o płaskich plamach koloru, wyrazistym konturze i inspiracji drzeworytem japońskim." },
+      { id: 81, epoch: "Ikony designu", epochOrder: 15, subStyle: "Art déco", title: "„Victoire” („Wiktoria / Zwycięstwo”)", altTitles: ["Wiktoria", "Zwycięstwo"], author: "René Lalique", year: "1 poł. XX w.", sortYear: 1928, wikiQuery: "René Lalique Victoire", note: "Art déco: opływowa, zgeometryzowana maskotka na chłodnicę samochodową z prasowanego szkła o aerodynamicznej linii." },
+      { id: 82, epoch: "Ikony designu", epochOrder: 15, subStyle: "Neoplastycyzm / Modernizm", title: "„Czerwono-niebieskie krzesło”", altTitles: [], author: "Gerrit Rietveld", year: "1 poł. XX w.", sortYear: 1918, wikiQuery: "Red and Blue Chair", note: "Neoplastycyzm (De Stijl) / modernizm: trójwymiarowa realizacja zasad Mondriana — linie pionowe, poziome i barwy podstawowe." },
+      { id: 83, epoch: "Ikony designu", epochOrder: 15, subStyle: "Styl skandynawski", title: "Krzesło „Mrówka”", altTitles: ["Ant Chair"], author: "Arne Jacobsen", year: "połowa XX w.", sortYear: 1952, wikiQuery: "Ant chair Arne Jacobsen", note: "Styl skandynawski: lekkie, ergonomiczne krzesło z jednego arkusza giętej sklejki i stalowych rurek." },
+      { id: 84, epoch: "Ikony designu", epochOrder: 15, subStyle: "Pop-design", title: "tzw. „Krzesło Panton”", altTitles: ["Panton Chair"], author: "Verner Panton", year: "2 poł. XX w.", sortYear: 1967, wikiQuery: "Panton Chair", note: "Pop-design: pierwsze w historii krzesło wspornikowe odlane w całości z jednego kawałka tworzywa sztucznego." },
+      { id: 85, epoch: "Ikony designu", epochOrder: 15, subStyle: "Design postmodernistyczny", title: "„Juicy Salif”", altTitles: [], author: "Philippe Starck", year: "2 poł. XX w.", sortYear: 1990, wikiQuery: "Juicy Salif", note: "Design postmodernistyczny: rzeźbiarska wyciskarka do cytrusów przypominająca pająka, gdzie forma prowokuje funkcję." }
+    ];
+
+    const EPOCHS = [
+      { name: "Prehistoria", time: "ok. 35 tys. – 1600 p.n.e.", order: 1, traits: "Malowidła naskalne w jaskiniach (Lascaux, Altamira), figurki Wenus o przerysowanych cechach płodności, budowle megalityczne (kromlechy, menhiry)." },
+      { name: "Starożytność", time: "IV tys. p.n.e. – V w. n.e.", order: 2, traits: "Egipt: hieratyzm, kanon postaci, piramidy. Mezopotamia: zikkuraty, płaskorzeźba. Grecja: proporcje, kontrapost, trzy porządki. Rzym: łuk, kopuła, beton, realizm portretu." },
+      { name: "Średniowiecze", time: "V w. – XV w.", order: 3, traits: "Bizancjum: mozaiki na złotym tle, kopuły na pendentywach. Styl romański: grube mury, łuk półkolisty, funkcja obronna. Gotyk: łuk ostry, sklepienie krzyżowo-żebrowe, przypory, witraże." },
+      { name: "Renesans", time: "XV w. – XVI w.", order: 4, traits: "Antropocentryzm, inspiracja antykiem, perspektywa zbieżna (linearna), harmonia, symetria, budowle na planie centralnym, sfumato." },
+      { name: "Manieryzm", time: "XVI w. (ok. 1520–1600)", order: 5, traits: "Świadome łamanie reguł renesansowej harmonii, wydłużone proporcje postaci, nienaturalne pozy (figura serpentinata), wyrafinowanie i sztuczność." },
+      { name: "Barok", time: "koniec XVI w. – XVIII w.", order: 6, traits: "Dynamizm, teatralność, bogata ornamentyka, kontrastowy światłocień (tenebryzm), falujące fasady, emocjonalność i przepych." },
+      { name: "Rokoko", time: "XVIII w. (ok. 1720–1780)", order: 7, traits: "Lekkość, kameralność, asymetria, ornament rocaille, pastelowa kolorystyka, tematyka dworska i miłosna (fête galante)." },
+      { name: "Klasycyzm", time: "2 poł. XVIII w. – pocz. XIX w.", order: 8, traits: "Powrót do wzorców antycznych, racjonalizm, umiar, wyraźny rysunek ponad kolorem, symetria, tematyka patriotyczna i obywatelska." },
+      { name: "Romantyzm", time: "1 poł. XIX w.", order: 9, traits: "Uczuciowość, indywidualizm, fascynacja grozą natury, egzotyką, historią i walką o wolność; dynamiczne kompozycje i ekspresja koloru." },
+      { name: "Realizm", time: "połowa XIX w.", order: 10, traits: "Obiektywne, pozbawione idealizacji ukazywanie codziennego życia zwykłych ludzi, chłopów i robotników; wierność obserwacji natury." },
+      { name: "Impresjonizm", time: "2 poł. XIX w. (od ok. 1874)", order: 11, traits: "Malarstwo plenerowe, uchwycenie ulotnego wrażenia światła i chwili, rezygnacja z czerni i konturu, dywizjonizm plam barwnych." },
+      { name: "Postimpresjonizm", time: "koniec XIX w.", order: 12, traits: "Indywidualne poszukiwania wykraczające poza impresjonizm: puantylizm (Seurat), ekspresja koloru (van Gogh), geometryzacja (Cézanne), syntetyzm (Gauguin)." },
+      { name: "Secesja", time: "przełom XIX i XX w.", order: 13, traits: "Płynna, falista linia, asymetria, motywy roślinne i zwierzęce, płaskość plamy barwnej, dekoracyjność, jedność sztuk pięknych i rzemiosła." },
+      { name: "Awangarda i neoawangarda", time: "XX w.", order: 14, traits: "Radykalne zerwanie z tradycją: ekspresjonizm, fowizm, kubizm, futuryzm, dadaizm (ready-made), suprematyzm, surrealizm, modernizm i pop-art." },
+      { name: "Ikony designu", time: "XIX w. – XX w.", order: 15, traits: "Rozwój wzornictwa przemysłowego od giętego drewna Thoneta, przez secesję, Art déco i neoplastycyzm, po styl skandynawski, pop-design i postmodernizm." }
+    ];
+
+    const TRUE_FALSE_STATEMENTS = [
+      { id: 1, epoch: "Prehistoria", statement: "Malowidła w jaskini w Lascaux przedstawiają zwierzęta w tzw. perspektywie skręconej (np. tułów z profilu, a rogi od przodu).", isTrue: true, explanation: "Prawda — perspektywa skręcona jest jedną z najbardziej charakterystycznych cech malarstwa paleolitycznego." },
+      { id: 2, epoch: "Prehistoria", statement: "Stonehenge to przykład architektury bazylikowej wzniesionej w epoce brązu przy użyciu zaprawy wapiennej.", isTrue: false, explanation: "Fałsz — Stonehenge to budowla megalityczna (kromlech) z wielkich bloków kamiennych układanych bez zaprawy." },
+      { id: 3, epoch: "Starożytność (Egipt)", statement: "Piramida Dżesera w Sakkarze została zaprojektowana przez Imhotepa i ma formę piramidy schodkowej.", isTrue: true, explanation: "Prawda — Imhotep zaprojektował ją dla faraona Dżesera w XXVII w. p.n.e. poprzez spiętrzenie mastab." },
+      { id: 4, epoch: "Starożytność (Grecja)", statement: "Rzeźba „Doryforos” Polikleta wprowadza klasyczny kontrapost oraz kanon idealnych proporcji ludzkiego ciała.", isTrue: true, explanation: "Prawda — ciężar ciała spoczywa na jednej nodze, co nadaje sylwetce naturalny, zrównoważony ruch." },
+      { id: 5, epoch: "Starożytność (Grecja)", statement: "„Nike z Samotraki” pochodzi z okresu archaicznego i cechuje się sztywną, frontalną pozą oraz tzw. uśmiechem archaicznym.", isTrue: false, explanation: "Fałsz — „Nike z Samotraki” to rzeźba hellenistyczna z II w. p.n.e., pełna dramatyzmu i dynamiki rozwianych szat." },
+      { id: 6, epoch: "Starożytność (Rzym)", statement: "Panteon w Rzymie posiada betonową kopułę kasetonową z otworem na szczycie zwanym oculusem.", isTrue: true, explanation: "Prawda — oculus jest jedynym źródłem naturalnego światła oświetlającym wnętrze rotundy." },
+      { id: 7, epoch: "Średniowiecze (Bizancjum)", statement: "W sztuce bizantyjskiej dominuje perspektywa zbieżna, realistyczny światłocień oraz dynamiczny ruch postaci.", isTrue: false, explanation: "Fałsz — sztuka bizantyjska (np. mozaiki w San Vitale) jest hieratyczna, frontalna, płaska i operuje złotym tłem." },
+      { id: 8, epoch: "Średniowiecze (Styl romański)", statement: "Architektura romańska charakteryzuje się grubymi kamiennymi murami, małymi oknami oraz łukami półkolistymi.", isTrue: true, explanation: "Prawda — masywność i obronny charakter (np. White Tower) odróżniają styl romański od strzelistego gotyku." },
+      { id: 9, epoch: "Średniowiecze (Gotyk)", statement: "Konstrukcja gotyckiej katedry (np. w Chartres) opiera się na systemie przyporowym, łukach ostrych i sklepieniu krzyżowo-żebrowym.", isTrue: true, explanation: "Prawda — odciążenie ścian pozwoliło na wprowadzenie ogromnych okien wypełnionych witrażami." },
+      { id: 10, epoch: "Średniowiecze (Gotyk)", statement: "„Piękna Madonna z Wrocławia” reprezentuje tzw. styl piękny (gotyk międzynarodowy), cechujący się liryzmem i miękkimi, kaskadowymi fałdami szat.", isTrue: true, explanation: "Prawda — rzeźba ta powstała w XIV w. i jest jednym z najsłynniejszych dzieł gotyku w Polsce." },
+      { id: 11, epoch: "Renesans", statement: "W malarstwie renesansowym powszechnie stosowano perspektywę zbieżną (linearną), symetrię oraz harmonijne układy kompozycyjne.", isTrue: true, explanation: "Prawda — doskonałym przykładem jest „Ostatnia wieczerza” Leonarda da Vinci." },
+      { id: 12, epoch: "Renesans", statement: "Kopuła katedry we Florencji autorstwa Filippo Brunelleschiego została wzniesiona w XVI wieku według projektu Donata Bramantego.", isTrue: false, explanation: "Fałsz — kopułę zaprojektował i wzniósł Filippo Brunelleschi w XV wieku (ukończona w 1436 r.)." },
+      { id: 13, epoch: "Manieryzm", statement: "Manieryzm świadomie odchodził od renesansowych kanonów proporcji, stosując nienaturalne wydłużenie sylwetek i wyrafinowane pozy.", isTrue: true, explanation: "Prawda — widać to wyraźnie w „Madonnie z długą szyją” Parmigianino." },
+      { id: 14, epoch: "Barok", statement: "Tenebryzm w malarstwie Caravaggia polega na operowaniu ostrym kontrastem między głębokim mrokiem a snopem światła wydobywającym postacie.", isTrue: true, explanation: "Prawda — technika ta potęgowała dramatyzm sceny, jak w „Nawróceniu św. Pawła”." },
+      { id: 15, epoch: "Barok", statement: "Kościół San Carlo alle Quattro Fontane Francesca Borrominiego wyróżnia się surową, płaską fasadą bez żadnych załamań.", isTrue: false, explanation: "Fałsz — fasada zaprojektowana przez Borrominiego jest silnie falująca, wklęsło-wypukła i dynamiczna." },
+      { id: 16, epoch: "Rokoko", statement: "Malarstwo rokokowe (np. „Huśtawka” Fragonarda) preferuje pastelową kolorystykę, lekkość i kameralną tematykę miłosno-dworską.", isTrue: true, explanation: "Prawda — rokoko odeszło od monumentalnego patosu baroku na rzecz intymności i dekoracyjności." },
+      { id: 17, epoch: "Klasycyzm", statement: "Klasycyzm czerpał wzorce z antyku, stawiając na pierwszym miejscu wyraźny rysunek, symetrię, umiar i tematykę obywatelską.", isTrue: true, explanation: "Prawda — sztandarowym dziełem jest „Przysięga Horacjuszy” Jacques-Louis Davida." },
+      { id: 18, epoch: "Romantyzm", statement: "Malarze romantyczni odrzucali emocje i indywidualizm na rzecz chłodnej, naukowej analizy proporcji antycznych.", isTrue: false, explanation: "Fałsz — to opis klasycyzmu; romantyzm stawiał na uczucia, wyobraźnię, grozę natury i dramatyzm." },
+      { id: 19, epoch: "Realizm", statement: "Gustave Courbet w „Kamieniarzach” ukazał ciężką pracę fizyczną w sposób dosłowny, bez upiększania i mitologizacji.", isTrue: true, explanation: "Prawda — realizm dążył do wiernego przedstawienia współczesnej rzeczywistości i wszystkich warstw społecznych." },
+      { id: 20, epoch: "Impresjonizm", statement: "Impresjoniści malowali głównie w pracowni przy sztucznym świetle, starannie wygładzając powierzchnię płótna i obrysowując kontury czernią.", isTrue: false, explanation: "Fałsz — impresjoniści pracowali w plenerze, rezygnowali z czerni i konturu, nakładając krótkie plamy czystych barw." },
+      { id: 21, epoch: "Postimpresjonizm", statement: "Puantylizm Georges'a Seurata polega na budowaniu obrazu z drobnych kropek czystego koloru, które łączą się optycznie w oku widza.", isTrue: true, explanation: "Prawda — metodę tę zastosował w „Niedzielnym popołudniu na wyspie Grande Jatte”." },
+      { id: 22, epoch: "Secesja", statement: "Dla secesji charakterystyczne są faliste, organiczne linie, motywy roślinne, asymetria oraz dekoracyjne traktowanie płaszczyzny.", isTrue: true, explanation: "Prawda — cechy te widoczne są zarówno w architekturze (Horta, Gaudí), jak i w malarstwie (Klimt, Wyspiański)." },
+      { id: 23, epoch: "Awangarda (Dadaizm)", statement: "„Fontanna” Marcela Duchampa to przykład dzieła typu ready-made, które podważało tradycyjne kryteria artyzmu i rzemiosła.", isTrue: true, explanation: "Prawda — zwykły przedmiot użytkowy podniesiony decyzją artysty do rangi dzieła sztuki stał się symbolem dadaizmu." },
+      { id: 24, epoch: "Awangarda (Suprematyzm)", statement: "„Czarny kwadrat na białym tle” Kazimierza Malewicza to sztandarowe dzieło suprematyzmu i abstrakcji geometrycznej.", isTrue: true, explanation: "Prawda — Malewicz odrzucił całkowicie naśladowanie rzeczywistości na rzecz czystych form geometrycznych." },
+      { id: 25, epoch: "Ikony designu", statement: "„Czerwono-niebieskie krzesło” Gerrita Rietvelda stanowi trójwymiarowe przełożenie założeń neoplastycyzmu (grupy De Stijl) na formę mebla.", isTrue: true, explanation: "Prawda — wykorzystuje wyłącznie kąty proste, płaszczyzny oraz barwy podstawowe i niekolory (czerń)." },
+      { id: 26, epoch: "Ikony designu", statement: "Wyciskarka do cytrusów „Juicy Salif” Philippe'a Starcka reprezentuje styl Biedermeier z połowy XIX wieku.", isTrue: false, explanation: "Fałsz — „Juicy Salif” pochodzi z 1990 r. i jest ikoną designu postmodernistycznego." }
+    ];
+
+    function ArtworkImage({ artwork, customImages, onUploadCustom }) {
+      const [imgUrl, setImgUrl] = useState(null);
+      const [loading, setLoading] = useState(true);
+      const [error, setError] = useState(false);
+
+      useEffect(() => {
+        if (customImages[artwork.id]) {
+          setImgUrl(customImages[artwork.id]);
+          setLoading(false);
+          setError(false);
+          return;
+        }
+
+        let cancelled = false;
+        setLoading(true);
+        setError(false);
+
+        const fetchWikiImage = async () => {
+          try {
+            const url = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(artwork.wikiQuery)}&gsrlimit=1&prop=pageimages&pithumbsize=600&format=json&origin=*`;
+            const res = await fetch(url);
+            const data = await res.json();
+            if (cancelled) return;
+            const pages = data?.query?.pages;
+            if (pages) {
+              const firstPage = Object.values(pages)[0];
+              if (firstPage?.thumbnail?.source) {
+                setImgUrl(firstPage.thumbnail.source);
+                setLoading(false);
+                return;
+              }
+            }
+            const commonsUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=filetype:bitmap+${encodeURIComponent(artwork.wikiQuery)}&gsrnamespace=6&gsrlimit=1&prop=imageinfo&iiprop=url&iiurlwidth=600&format=json&origin=*`;
+            const res2 = await fetch(commonsUrl);
+            const data2 = await res2.json();
+            if (cancelled) return;
+            const pages2 = data2?.query?.pages;
+            if (pages2) {
+              const firstPage2 = Object.values(pages2)[0];
+              const thumb = firstPage2?.imageinfo?.[0]?.thumburl || firstPage2?.imageinfo?.[0]?.url;
+              if (thumb) {
+                setImgUrl(thumb);
+                setLoading(false);
+                return;
+              }
+            }
+            setError(true);
+            setLoading(false);
+          } catch (e) {
+            if (!cancelled) {
+              setError(true);
+              setLoading(false);
+            }
+          }
+        };
+
+        fetchWikiImage();
+        return () => { cancelled = true; };
+      }, [artwork, customImages]);
+
+      const handleFileChange = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          onUploadCustom(artwork.id, reader.result);
+        };
+        reader.readAsDataURL(file);
+      };
+
+      return (
+        <div className="relative w-full h-52 bg-slate-100 overflow-hidden flex items-center justify-center group border-b border-slate-200">
+          {loading && (
+            <div className="flex flex-col items-center gap-2 text-slate-400 text-xs">
+              <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+              <span>Pobieranie z Wikimedia...</span>
+            </div>
+          )}
+          {!loading && imgUrl && !error && (
+            <img
+              src={imgUrl}
+              alt={artwork.title}
+              className="w-full h-full object-contain bg-slate-900/5 transition-transform duration-300 group-hover:scale-105"
+              onError={() => setError(true)}
+            />
+          )}
+          {!loading && error && (
+            <div className="p-4 text-center text-xs text-slate-500 flex flex-col items-center gap-2">
+              <span className="font-medium text-slate-700">{artwork.title}</span>
+              <span>Brak automatycznego podglądu (możesz dodać własne zdjęcie)</span>
+            </div>
+          )}
+          <label className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900/80 hover:bg-slate-900 text-white text-[11px] px-2.5 py-1 rounded-md cursor-pointer shadow">
+            📷 Zmień zdjęcie
+            <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+          </label>
+        </div>
+      );
+    }
+
+    
+      
+      
+      
+      const speakArtwork = (art) => {
+        if (!('speechSynthesis' in window)) {
+          alert('Twoja przeglądarka nie obsługuje syntezy mowy.');
+          return;
+        }
+        window.speechSynthesis.cancel();
+        
+        const cleanTitle = art.title.replace(/[„“”«»]/g, '');
+        const cleanAuthor = art.author.replace(/\(.*?\)/g, '').trim();
+        
+        // Helper to convert Roman numerals to Polish ordinal words for natural speech
+        const romanMap = {
+          'I': 'pierwszym', 'II': 'drugim', 'III': 'trzecim', 'IV': 'czwartym', 'V': 'piątym',
+          'VI': 'szóstym', 'VII': 'siódmym', 'VIII': 'ósmym', 'IX': 'dziewiątym', 'X': 'dziesiątym',
+          'XI': 'jedenastym', 'XII': 'dwunastym', 'XIII': 'trzynastym', 'XIV': 'czternastym', 'XV': 'piętnastym',
+          'XVI': 'szesnastym', 'XVII': 'siedemnastym', 'XVIII': 'osiemnastym', 'XIX': 'dziewiętnastym', 'XX': 'dwudziestym',
+          'XXI': 'dwudziestym pierwszym', 'XXII': 'dwudziestym drugim', 'XXVI': 'dwudziestym szóstym', 'XXVII': 'dwudziestym siódmym'
+        };
+
+        let spokenYear = art.year;
+        
+        // Replace "2 poł." / "1 poł." first
+        spokenYear = spokenYear.replace(/2\s*poł\./gi, 'druga połowa');
+        spokenYear = spokenYear.replace(/1\s*poł\./gi, 'pierwsza połowa');
+
+        // Replace Roman numeral followed by "w." or "w. p.n.e."
+        spokenYear = spokenYear.replace(/\b([IVXLCDM]+)\s*w\.\s*(p\.n\.e\.|n\.e\.)?/g, (match, roman, era) => {
+          const ordinal = romanMap[roman] || roman;
+          const eraText = era === 'p.n.e.' ? 'przed naszą erą' : (era === 'n.e.' ? 'naszej ery' : '');
+          return `${ordinal} wieku ${eraText}`.trim();
+        });
+
+        // Also handle general "w." if present without explicit roman numeral
+        spokenYear = spokenYear.replace(/w\./g, 'wieku');
+        spokenYear = spokenYear.replace(/p\.n\.e\./g, 'przed naszą erą');
+        spokenYear = spokenYear.replace(/n\.e\./g, 'naszej ery');
+
+        const text = `Dzieło nosi tytuł: ${cleanTitle}. Autorem jest: ${cleanAuthor}. Powstało w: ${spokenYear}. Należy do epoki: ${art.epoch}.`;
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        const voices = window.speechSynthesis.getVoices();
+        // Prefer natural Google or Microsoft or Polish voices if available
+        const plVoice = voices.find(v => v.lang && (v.lang === 'pl-PL' || v.lang.startsWith('pl')) && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Zosia') || v.name.includes('Marek'))) 
+                     || voices.find(v => v.lang && v.lang.startsWith('pl')) 
+                     || voices[0];
+        if (plVoice) {
+          utterance.voice = plVoice;
+        }
+        
+        utterance.lang = 'pl-PL';
+        utterance.rate = 0.95; // Slightly slower for warm natural flow
+        utterance.pitch = 1.0; // Normal natural pitch
+        
+        window.speechSynthesis.speak(utterance);
+      };
+
+function App() {
+      const [activeTab, setActiveTab] = useState("timeline");
+      // Advanced Quiz State
+      const [advTarget, setAdvTarget] = useState(null);
+      const [advTitleOpts, setAdvTitleOpts] = useState([]);
+      const [advAuthorOpts, setAdvAuthorOpts] = useState([]);
+      const [advYearOpts, setAdvYearOpts] = useState([]);
+      const [advSelTitle, setAdvSelTitle] = useState(null);
+      const [advSelAuthor, setAdvSelAuthor] = useState(null);
+      const [advSelYear, setAdvSelYear] = useState(null);
+      const [advSelEpoch, setAdvSelEpoch] = useState(null);
+      const [advEpochOpts, setAdvEpochOpts] = useState([]);
+      const [advChecked, setAdvChecked] = useState(false);
+
+      const generateAdvancedQuiz = () => {
+        const target = ARTWORKS[Math.floor(Math.random() * ARTWORKS.length)];
+        setAdvTarget(target);
+        setAdvSelTitle(null);
+        setAdvSelAuthor(null);
+        setAdvSelYear(null);
+        setAdvSelEpoch(null);
+        setAdvChecked(false);
+
+        // 4 options for epoch
+        const epochPool = EPOCHS.map(e => e.name).filter(e => e !== target.epoch);
+        const epochDistractors = epochPool.sort(() => 0.5 - Math.random()).slice(0, 3);
+        setAdvEpochOpts([target.epoch, ...epochDistractors].sort(() => 0.5 - Math.random()));
+
+        // 4 options for title
+        const titleDistractors = ARTWORKS.filter(a => a.id !== target.id).map(a => a.title).sort(() => 0.5 - Math.random()).slice(0, 3);
+        setAdvTitleOpts([target.title, ...titleDistractors].sort(() => 0.5 - Math.random()));
+
+        // 4 options for author
+        const authorPool = [...new Set(ARTWORKS.map(a => a.author).filter(a => a !== target.author))];
+        const authorDistractors = authorPool.sort(() => 0.5 - Math.random()).slice(0, 3);
+        setAdvAuthorOpts([target.author, ...authorDistractors].sort(() => 0.5 - Math.random()));
+
+        // 4 options for year
+        const yearPool = [...new Set(ARTWORKS.map(a => a.year).filter(a => a !== target.year))];
+        const yearDistractors = yearPool.sort(() => 0.5 - Math.random()).slice(0, 3);
+        setAdvYearOpts([target.year, ...yearDistractors].sort(() => 0.5 - Math.random()));
+      };
+
+      useEffect(() => {
+        if (activeTab === "advancedQuiz" && !advTarget) {
+          generateAdvancedQuiz();
+        }
+      }, [activeTab]);
+
+      const [selectedEpoch, setSelectedEpoch] = useState("Wszystkie");
+      const [hideMasteredTimeline, setHideMasteredTimeline] = useState(false);
+      const [searchQuery, setSearchQuery] = useState("");
+      const [examHideMode, setExamHideMode] = useState(false);
+      const [revealedCards, setRevealedCards] = useState({});
+      const [masteredIds, setMasteredIds] = useState(() => {
+        try { return JSON.parse(localStorage.getItem("hs_mastered_v2") || "[]"); } catch { return []; }
+      });
+      const [customImages, setCustomImages] = useState(() => {
+        try { const saved = JSON.parse(localStorage.getItem("hs_images_v2") || "{}"); return { ...{"30": "https://upload.wikimedia.org/wikipedia/commons/8/8b/Pi%C4%99kna_Madonna_z_Wroc%C5%82awia.jpg", "31": "https://cdn.kastatic.org/ka-content-images/84890a21f30a58f2b8c26944d2948b7847fe16c3.jpg", "57": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRpW27Lxh8pQT-_7mJ-bsoWvHdpaGQ00hOZmRo7dpmHDw&s=10", "61": "https://niezlasztuka.net/wp-content/uploads/2022/01/edgar-degas-mala-czternastoletnia-tancerka-1878-1881-waszyngton.jpg", "69": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQN0Fnng-If9ygx_o8LFuqBReDev45ZtjX-lgTInrEQCA&s=10", "73": "https://upload.wikimedia.org/wikipedia/commons/c/ce/Marcel_Duchamp.jpg", "76": "https://3.allegroimg.com/s720/0372e0/8ad12ecd421da2b34935d0937613/Salvador-Dali-Trwalosc-pamieci-OBRAZ-NA-PLOTNIE", "81": "https://cdn20.pamono.com/p/s/9/9/995565_qk4hdap317/victoire-by-rene-lalique.jpg"}, ...saved }; } catch { return {"30": "https://upload.wikimedia.org/wikipedia/commons/8/8b/Pi%C4%99kna_Madonna_z_Wroc%C5%82awia.jpg", "31": "https://cdn.kastatic.org/ka-content-images/84890a21f30a58f2b8c26944d2948b7847fe16c3.jpg", "57": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRpW27Lxh8pQT-_7mJ-bsoWvHdpaGQ00hOZmRo7dpmHDw&s=10", "61": "https://niezlasztuka.net/wp-content/uploads/2022/01/edgar-degas-mala-czternastoletnia-tancerka-1878-1881-waszyngton.jpg", "69": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQN0Fnng-If9ygx_o8LFuqBReDev45ZtjX-lgTInrEQCA&s=10", "73": "https://upload.wikimedia.org/wikipedia/commons/c/ce/Marcel_Duchamp.jpg", "76": "https://3.allegroimg.com/s720/0372e0/8ad12ecd421da2b34935d0937613/Salvador-Dali-Trwalosc-pamieci-OBRAZ-NA-PLOTNIE", "81": "https://cdn20.pamono.com/p/s/9/9/995565_qk4hdap317/victoire-by-rene-lalique.jpg"}; }
+      });
+
+      const [flashcardIndex, setFlashcardIndex] = useState(0);
+      const [flashcardFlipped, setFlashcardFlipped] = useState(false);
+      const [onlyUnmastered, setOnlyUnmastered] = useState(false);
+
+      const [quizMode, setQuizMode] = useState("identify");
+      const [quizQuestion, setQuizQuestion] = useState(null);
+      const [quizSelected, setQuizSelected] = useState(null);
+      const [quizScore, setQuizScore] = useState({ correct: 0, total: 0 });
+      const [chronoItems, setChronoItems] = useState([]);
+      const [chronoChecked, setChronoChecked] = useState(false);
+
+      const [tfIndex, setTfIndex] = useState(0);
+      const [tfAnswer, setTfAnswer] = useState(null);
+      const [tfScore, setTfScore] = useState({ correct: 0, total: 0 });
+
+      useEffect(() => {
+        try { localStorage.setItem("hs_mastered_v2", JSON.stringify(masteredIds)); } catch {}
+      }, [masteredIds]);
+
+      const handleUploadCustom = (id, dataUrl) => {
+        const updated = { ...customImages, [id]: dataUrl };
+        setCustomImages(updated);
+        try { localStorage.setItem("hs_images_v2", JSON.stringify(updated)); } catch {}
+      };
+
+      const toggleMastered = (id) => {
+        setMasteredIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+      };
+
+      const filteredArtworks = useMemo(() => {
+        return ARTWORKS.filter(item => {
+          const matchesEpoch = selectedEpoch === "Wszystkie" || item.epoch === selectedEpoch;
+          const matchesMastered = !hideMasteredTimeline || !masteredIds.includes(item.id);
+          const q = searchQuery.toLowerCase().trim();
+          const matchesQuery = !q ||
+            item.title.toLowerCase().includes(q) ||
+            item.author.toLowerCase().includes(q) ||
+            item.subStyle.toLowerCase().includes(q) ||
+            item.year.toLowerCase().includes(q);
+          return matchesEpoch && matchesMastered && matchesQuery;
+        });
+      }, [selectedEpoch, searchQuery, hideMasteredTimeline, masteredIds]);
+
+      const flashcardDeck = useMemo(() => {
+        const base = selectedEpoch === "Wszystkie" ? ARTWORKS : ARTWORKS.filter(a => a.epoch === selectedEpoch);
+        const filtered = onlyUnmastered ? base.filter(a => !masteredIds.includes(a.id)) : base;
+        return filtered.length > 0 ? filtered : base;
+      }, [selectedEpoch, onlyUnmastered, masteredIds]);
+
+      const currentFlashcard = flashcardDeck[flashcardIndex % flashcardDeck.length] || ARTWORKS[0];
+
+      const generateIdentifyQuestion = () => {
+        const target = ARTWORKS[Math.floor(Math.random() * ARTWORKS.length)];
+        const questionTypes = ["author", "epoch", "year", "title"];
+        const qType = questionTypes[Math.floor(Math.random() * questionTypes.length)];
+
+        let correctVal = "";
+        let prompt = "";
+        let pool = [];
+
+        if (qType === "author" && target.author !== "Nieznany") {
+          prompt = `Kto jest autorem dzieła „${target.title}”?`;
+          correctVal = target.author;
+          pool = [...new Set(ARTWORKS.map(a => a.author).filter(a => a !== "Nieznany" && a !== correctVal))];
+        } else if (qType === "epoch") {
+          prompt = `Do jakiej epoki i stylu należy „${target.title}”?`;
+          correctVal = target.subStyle !== target.epoch ? `${target.epoch} (${target.subStyle})` : target.epoch;
+          pool = [...new Set(ARTWORKS.map(a => a.subStyle !== a.epoch ? `${a.epoch} (${a.subStyle})` : a.epoch).filter(v => v !== correctVal))];
+        } else if (qType === "year") {
+          prompt = `Kiedy powstało dzieło „${target.title}”?`;
+          correctVal = target.year;
+          pool = [...new Set(ARTWORKS.map(a => a.year).filter(v => v !== correctVal))];
+        } else {
+          prompt = `Jaki tytuł nosi to dzieło (${target.author}, ${target.year})?`;
+          correctVal = target.title;
+          pool = [...new Set(ARTWORKS.map(a => a.title).filter(v => v !== correctVal))];
+        }
+
+        const distractors = pool.sort(() => 0.5 - Math.random()).slice(0, 3);
+        const options = [correctVal, ...distractors].sort(() => 0.5 - Math.random());
+
+        setQuizQuestion({ target, qType, prompt, correctVal, options });
+        setQuizSelected(null);
+      };
+
+      const generateChronoChallenge = () => {
+        const shuffled = [...ARTWORKS].sort(() => 0.5 - Math.random()).slice(0, 4);
+        setChronoItems(shuffled);
+        setChronoChecked(false);
+      };
+
+      useEffect(() => {
+        if (activeTab === "quiz" && !quizQuestion) {
+          generateIdentifyQuestion();
+          generateChronoChallenge();
+        }
+      }, [activeTab]);
+
+      const moveChronoItem = (index, direction) => {
+        if (chronoChecked) return;
+        const newIndex = index + direction;
+        if (newIndex < 0 || newIndex >= chronoItems.length) return;
+        const copy = [...chronoItems];
+        const [moved] = copy.splice(index, 1);
+        copy.splice(newIndex, 0, moved);
+        setChronoItems(copy);
+      };
+
+      const isChronoCorrect = useMemo(() => {
+        for (let i = 0; i < chronoItems.length - 1; i++) {
+          if (chronoItems[i].sortYear > chronoItems[i + 1].sortYear) return false;
+        }
+        return true;
+      }, [chronoItems]);
+
+      const currentTf = TRUE_FALSE_STATEMENTS[tfIndex % TRUE_FALSE_STATEMENTS.length];
+      const progressPct = Math.round((masteredIds.length / ARTWORKS.length) * 100);
+
+      return (
+        <div className="min-h-screen flex flex-col">
+          <header className="bg-slate-900 text-white shadow-lg sticky top-0 z-30">
+            <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h1 className="font-serif-title text-2xl md:text-3xl font-bold tracking-tight text-amber-300">
+                  Historia Sztuki i Designu
+                </h1>
+                <p className="text-xs text-slate-300 mt-0.5">
+                  Kompletny kanon egzaminacyjny • {ARTWORKS.length} dzieł • 15 epok
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {[
+                  { id: "timeline", label: "🏛️ Oś czasu i kanon" },
+                  { id: "flashcards", label: "🗂️ Fiszki" },
+                  { id: "quiz", label: "🎯 Quiz: KTO / KIEDY" },
+                  { id: "advancedQuiz", label: "🧠 Quiz rozbudowany ( 4 w 1 )" },
+                  { id: "truefalse", label: "⚖️ Style: Prawda / Fałsz" },
+                  { id: "epochs", label: "📜 Ściąga epok" }
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`px-3.5 py-2 rounded-lg text-sm font-medium transition ${
+                      activeTab === tab.id
+                        ? "bg-amber-400 text-slate-950 shadow font-semibold"
+                        : "bg-slate-800 text-slate-200 hover:bg-slate-700"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-slate-800 px-4 py-1.5 text-xs flex items-center justify-between max-w-7xl mx-auto">
+              <div className="flex items-center gap-3 w-full">
+                <span className="text-slate-300 whitespace-nowrap">
+                  Opanowane dzieła: <strong className="text-amber-300">{masteredIds.length}/{ARTWORKS.length}</strong> ({progressPct}%)
+                </span>
+                <div className="w-full max-w-xs bg-slate-700 h-2 rounded-full overflow-hidden">
+                  <div className="bg-emerald-400 h-full transition-all duration-500" style={{ width: `${progressPct}%` }} />
+                </div>
+              </div>
+              {masteredIds.length > 0 && (
+                <button
+                  onClick={() => { if (confirm("Wyzerować postęp nauki?")) setMasteredIds([]); }}
+                  className="text-slate-400 hover:text-white underline ml-4 whitespace-nowrap"
+                >
+                  Resetuj postęp
+                </button>
+              )}
+            </div>
+          </header>
+
+          <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6">
+            {activeTab === "timeline" && (
+              <div>
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-col lg:flex-row gap-4 justify-between items-stretch lg:items-center">
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Epoka:</label>
+                    <select
+                      value={selectedEpoch}
+                      onChange={e => setSelectedEpoch(e.target.value)}
+                      className="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="Wszystkie">Wszystkie epoki ({ARTWORKS.length})</option>
+                      {EPOCHS.map(ep => (
+                        <option key={ep.name} value={ep.name}>
+                          {ep.order}. {ep.name} ({ARTWORKS.filter(a => a.epoch === ep.name).length})
+                        </option>
+                      ))}
+                    </select>
+
+                    <input
+                      type="text"
+                      placeholder="Szukaj tytułu, autora, stylu, daty..."
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      className="border border-slate-300 rounded-lg px-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-slate-700 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={hideMasteredTimeline}
+                        onChange={e => setHideMasteredTimeline(e.target.checked)}
+                        className="rounded text-emerald-600 w-4 h-4"
+                      />
+                      🙈 Ukryj nauczone ({masteredIds.length})
+                    </label>
+
+                    {masteredIds.length > 0 && (
+                      <button
+                        onClick={() => {
+                          if (confirm("Czy na pewno chcesz zresetować postęp nauki i zacząć od nowa?")) {
+                            setMasteredIds([]);
+                          }
+                        }}
+                        className="px-3 py-2 rounded-lg text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition"
+                      >
+                        🔄 Reset nauki
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => {
+                        setExamHideMode(!examHideMode);
+                        setRevealedCards({});
+                      }}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium border transition ${
+                        examHideMode
+                          ? "bg-indigo-600 text-white border-indigo-600"
+                          : "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200"
+                      }`}
+                    >
+                      {examHideMode ? "👁️ Tryb egzaminacyjny: UKRYTE PODPISY" : "🙈 Ukryj podpisy (sprawdź się)"}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                  {filteredArtworks.map(art => {
+                    const isHidden = examHideMode && !revealedCards[art.id];
+                    const isMastered = masteredIds.includes(art.id);
+
+                    return (
+                      <div
+                        key={art.id}
+                        className={`bg-white rounded-xl border transition shadow-sm hover:shadow-md flex flex-col overflow-hidden ${
+                          isMastered ? "border-emerald-400 ring-1 ring-emerald-200" : "border-slate-200"
+                        }`}
+                      >
+                        <ArtworkImage
+                          artwork={art}
+                          customImages={customImages}
+                          onUploadCustom={handleUploadCustom}
+                        />
+
+                        <div className="p-4 flex-1 flex flex-col justify-between">
+                          <div>
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                              <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                {art.epochOrder}. {art.epoch}
+                              </span>
+                              <button
+                                onClick={() => toggleMastered(art.id)}
+                                title={isMastered ? "Oznacz jako do powtórki" : "Oznacz jako opanowane"}
+                                className={`text-xs px-2 py-0.5 rounded border font-medium transition ${
+                                  isMastered
+                                    ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                                    : "bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100"
+                                }`}
+                              >
+                                {isMastered ? "✓ Umiem" : "+ Nauczone"}
+                              </button>
+                            </div>
+
+                            {isHidden ? (
+                              <div className="py-6 text-center bg-slate-50 rounded-lg border border-dashed border-slate-300 my-2">
+                                <p className="text-xs text-slate-500 mb-2">Spróbuj nazwać dzieło, autora i styl</p>
+                                <button
+                                  onClick={() => setRevealedCards(prev => ({ ...prev, [art.id]: true }))}
+                                  className="text-xs bg-indigo-600 text-white px-3 py-1.5 rounded-md hover:bg-indigo-700"
+                                >
+                                  Odsłoń odpowiedź
+                                </button>
+                              </div>
+                            ) : (
+                              <>
+                                {art.subStyle !== art.epoch && (
+                                  <div className="text-xs font-semibold text-amber-700 mb-1">
+                                    Styl / nurt: {art.subStyle}
+                                  </div>
+                                )}
+                                <h3 className="font-bold text-slate-900 text-base leading-snug">
+                                  {art.title}
+                                </h3>
+                                {art.altTitles.length > 0 && (
+                                  <p className="text-xs text-slate-500 italic">
+                                    (także: {art.altTitles.join(", ")})
+                                  </p>
+                                )}
+                                <p className="text-sm text-slate-700 mt-1.5 font-medium">
+                                  {art.author}
+                                </p>
+                                <p className="text-xs text-slate-500 mt-0.5">
+                                  Czas powstania: <strong className="text-slate-700">{art.year}</strong>
+                                </p>
+                                <p className="text-xs text-slate-600 mt-3 pt-2.5 border-t border-slate-100 leading-relaxed">
+                                  {art.note}
+                                </p>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {activeTab === "flashcards" && (
+              <div className="max-w-2xl mx-auto">
+                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-wrap items-center justify-between gap-3">
+                  <select
+                    value={selectedEpoch}
+                    onChange={e => { setSelectedEpoch(e.target.value); setFlashcardIndex(0); setFlashcardFlipped(false); }}
+                    className="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white"
+                  >
+                    <option value="Wszystkie">Wszystkie epoki ({ARTWORKS.length})</option>
+                    {EPOCHS.map(ep => (
+                      <option key={ep.name} value={ep.name}>{ep.order}. {ep.name}</option>
+                    ))}
+                  </select>
+
+                  <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={onlyUnmastered}
+                      onChange={e => { setOnlyUnmastered(e.target.checked); setFlashcardIndex(0); setFlashcardFlipped(false); }}
+                      className="rounded text-indigo-600"
+                    />
+                    Tylko nieopanowane
+                  </label>
+
+                  <span className="text-xs font-semibold text-slate-500">
+                    Karta {(flashcardIndex % flashcardDeck.length) + 1} z {flashcardDeck.length}
+                  </span>
+                </div>
+
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
+                  <div className="h-72 bg-slate-100 relative">
+                    <ArtworkImage
+                      artwork={currentFlashcard}
+                      customImages={customImages}
+                      onUploadCustom={handleUploadCustom}
+                    />
+                  </div>
+
+                  <div className="p-6 text-center">
+                    {!flashcardFlipped ? (
+                      <div className="py-4">
+                        <span className="text-xs uppercase tracking-wider text-slate-400 font-semibold">
+                          Rozpoznaj dzieło ze zdjęcia
+                        </span>
+                        <p className="text-sm text-slate-600 mt-2">
+                          Podaj z pamięci: <strong>tytuł, autora, epokę (wraz z podstylem) oraz czas powstania</strong>.
+                        </p>
+                        <button
+                          onClick={() => setFlashcardFlipped(true)}
+                          className="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-3 rounded-xl shadow transition"
+                        >
+                          Odwróć fiszkę i sprawdź odpowiedź
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="text-left space-y-2 animate-fadeIn">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold px-2.5 py-1 rounded bg-indigo-100 text-indigo-800">
+                            {currentFlashcard.epoch} {currentFlashcard.subStyle !== currentFlashcard.epoch ? `— ${currentFlashcard.subStyle}` : ""}
+                          </span>
+                          <span className="text-xs font-semibold text-slate-500">{currentFlashcard.year}</span>
+                        </div>
+                        <h2 className="text-2xl font-bold text-slate-900 pt-1">{currentFlashcard.title}</h2>
+                        {currentFlashcard.altTitles.length > 0 && (
+                          <p className="text-xs text-slate-500">Akceptowane warianty: {currentFlashcard.altTitles.join(", ")}</p>
+                        )}
+                        <p className="text-base font-semibold text-slate-700">Autor: {currentFlashcard.author}</p>
+                        <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-200 mt-2">
+                          {currentFlashcard.note}
+                        </p>
+
+                        <div className="pt-4 flex flex-wrap gap-3 justify-between items-center">
+                          <button
+                            onClick={() => toggleMastered(currentFlashcard.id)}
+                            className={`px-4 py-2 rounded-lg text-sm font-semibold border ${
+                              masteredIds.includes(currentFlashcard.id)
+                                ? "bg-emerald-600 text-white border-emerald-600"
+                                : "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
+                            }`}
+                          >
+                            {masteredIds.includes(currentFlashcard.id) ? "✓ Opanowane!" : "Oznacz jako opanowane"}
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setFlashcardFlipped(false);
+                              setFlashcardIndex(prev => prev + 1);
+                            }}
+                            className="bg-slate-900 hover:bg-slate-800 text-white px-5 py-2 rounded-lg text-sm font-semibold"
+                          >
+                            Następna fiszka →
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex justify-between mt-4">
+                  <button
+                    onClick={() => { setFlashcardFlipped(false); setFlashcardIndex(prev => (prev - 1 + flashcardDeck.length) % flashcardDeck.length); }}
+                    className="px-4 py-2 text-sm bg-white border border-slate-300 rounded-lg hover:bg-slate-50"
+                  >
+                    ← Poprzednia
+                  </button>
+                  <button
+                    onClick={() => { setFlashcardFlipped(false); setFlashcardIndex(Math.floor(Math.random() * flashcardDeck.length)); }}
+                    className="px-4 py-2 text-sm bg-white border border-slate-300 rounded-lg hover:bg-slate-50"
+                  >
+                    🎲 Losuj fiszkę
+                  </button>
+                  <button
+                    onClick={() => { setFlashcardFlipped(false); setFlashcardIndex(prev => (prev + 1) % flashcardDeck.length); }}
+                    className="px-4 py-2 text-sm bg-white border border-slate-300 rounded-lg hover:bg-slate-50"
+                  >
+                    Następna →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "quiz" && (
+              <div className="max-w-3xl mx-auto">
+                <div className="flex gap-2 mb-6">
+                  <button
+                    onClick={() => setQuizMode("identify")}
+                    className={`flex-1 py-3 px-4 rounded-xl font-semibold text-sm border transition ${
+                      quizMode === "identify"
+                        ? "bg-indigo-600 text-white border-indigo-600 shadow"
+                        : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                    }`}
+                  >
+                    🖼️ KTO I CO? (Rozpoznawanie dzieł)
+                  </button>
+                  <button
+                    onClick={() => setQuizMode("chronology")}
+                    className={`flex-1 py-3 px-4 rounded-xl font-semibold text-sm border transition ${
+                      quizMode === "chronology"
+                        ? "bg-indigo-600 text-white border-indigo-600 shadow"
+                        : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                    }`}
+                  >
+                    ⏳ KIEDY? (Układanie chronologii)
+                  </button>
+                </div>
+
+                {quizMode === "identify" && quizQuestion && (
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-md overflow-hidden">
+                    <div className="bg-slate-50 px-6 py-3 border-b border-slate-200 flex justify-between items-center text-xs font-semibold text-slate-600">
+                      <span>Test wyboru (Kanon arcydzieł)</span>
+                      <span>Wynik: {quizScore.correct} / {quizScore.total}</span>
+                    </div>
+
+                    <div className="p-6">
+                      <div className="max-w-md mx-auto mb-5 rounded-xl overflow-hidden border border-slate-200">
+                        <ArtworkImage
+                          artwork={quizQuestion.target}
+                          customImages={customImages}
+                          onUploadCustom={handleUploadCustom}
+                        />
+                      </div>
+
+                      <h3 className="text-lg font-bold text-slate-900 text-center mb-5">
+                        {quizQuestion.prompt}
+                      </h3>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {quizQuestion.options.map((opt, idx) => {
+                          let btnStyle = "bg-white border-slate-300 hover:bg-slate-50 text-slate-800";
+                          if (quizSelected !== null) {
+                            if (opt === quizQuestion.correctVal) {
+                              btnStyle = "bg-emerald-100 border-emerald-500 text-emerald-900 font-semibold";
+                            } else if (opt === quizSelected) {
+                              btnStyle = "bg-rose-100 border-rose-500 text-rose-900";
+                            } else {
+                              btnStyle = "bg-slate-50 border-slate-200 text-slate-400";
+                            }
+                          }
+
+                          return (
+                            <button
+                              key={idx}
+                              disabled={quizSelected !== null}
+                              onClick={() => {
+                                setQuizSelected(opt);
+                                setQuizScore(prev => ({
+                                  correct: prev.correct + (opt === quizQuestion.correctVal ? 1 : 0),
+                                  total: prev.total + 1
+                                }));
+                              }}
+                              className={`p-3.5 rounded-xl border text-left text-sm transition ${btnStyle}`}
+                            >
+                              {opt}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {quizSelected !== null && (
+                        <div className="mt-6 p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                          <div className="text-xs text-slate-700">
+                            <strong>Pełna metryczka:</strong> {quizQuestion.target.author}, <em>{quizQuestion.target.title}</em> — {quizQuestion.target.epoch} ({quizQuestion.target.subStyle}), {quizQuestion.target.year}.
+                          </div>
+                          <button
+                            onClick={generateIdentifyQuestion}
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold whitespace-nowrap"
+                          >
+                            Następne pytanie →
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {quizMode === "chronology" && (
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-md p-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <div>
+                        <h3 className="text-lg font-bold text-slate-900">Ułóż dzieła chronologicznie</h3>
+                        <p className="text-xs text-slate-500">Od najstarszego (na górze) do najnowszego (na dole)</p>
+                      </div>
+                      <button
+                        onClick={generateChronoChallenge}
+                        className="text-xs bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-lg font-semibold text-slate-700"
+                      >
+                        🔄 Nowy zestaw
+                      </button>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      {chronoItems.map((item, idx) => (
+                        <div
+                          key={item.id}
+                          className={`p-3.5 rounded-xl border flex items-center justify-between gap-3 ${
+                            chronoChecked
+                              ? isChronoCorrect
+                                ? "bg-emerald-50 border-emerald-400"
+                                : "bg-amber-50 border-amber-300"
+                              : "bg-slate-50 border-slate-200"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="w-7 h-7 rounded-full bg-slate-800 text-white text-xs font-bold flex items-center justify-center">
+                              {idx + 1}
+                            </span>
+                            <div>
+                              <div className="font-bold text-sm text-slate-900">{item.title}</div>
+                              <div className="text-xs text-slate-600">{item.author}</div>
+                              {chronoChecked && (
+                                <div className="text-xs font-semibold text-indigo-700 mt-0.5">
+                                  {item.epoch} • {item.year}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex gap-1">
+                            <button
+                              disabled={chronoChecked || idx === 0}
+                              onClick={() => moveChronoItem(idx, -1)}
+                              className="px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold disabled:opacity-30 hover:bg-slate-100"
+                            >
+                              ↑
+                            </button>
+                            <button
+                              disabled={chronoChecked || idx === chronoItems.length - 1}
+                              onClick={() => moveChronoItem(idx, 1)}
+                              className="px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold disabled:opacity-30 hover:bg-slate-100"
+                            >
+                              ↓
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="mt-5 flex items-center justify-between">
+                      {!chronoChecked ? (
+                        <button
+                          onClick={() => setChronoChecked(true)}
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl text-sm font-semibold"
+                        >
+                          Sprawdź kolejność
+                        </button>
+                      ) : (
+                        <div className="flex items-center justify-between w-full">
+                          <span className={`font-bold text-sm ${isChronoCorrect ? "text-emerald-700" : "text-rose-700"}`}>
+                            {isChronoCorrect ? "✅ Brawo! Kolejność jest w 100% poprawna." : "❌ Kolejność wymaga poprawy — sprawdź daty powyżej."}
+                          </span>
+                          <button
+                            onClick={generateChronoChallenge}
+                            className="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-semibold"
+                          >
+                            Kolejne zadanie →
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            
+            {activeTab === "advancedQuiz" && advTarget && (
+              <div className="max-w-3xl mx-auto bg-white rounded-2xl border border-slate-200 shadow-md p-6">
+                <div className="flex justify-between items-center pb-4 mb-4 border-b border-slate-100">
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-900">Quiz rozbudowany (3 w 1)</h2>
+                    <p className="text-xs text-slate-500">Zbadaj dzieło, a następnie odpowiedz na wszystkie 4 pytania i sprawdź wynik</p>
+                  </div>
+                  <button
+                    onClick={generateAdvancedQuiz}
+                    className="text-xs bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-lg font-semibold text-slate-700"
+                  >
+                    🔄 Losuj inne dzieło
+                  </button>
+                </div>
+
+                {/* Obrazek u góry */}
+                <div className="max-w-md mx-auto mb-6 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50">
+                  <ArtworkImage
+                    artwork={advTarget}
+                    customImages={customImages}
+                    onUploadCustom={handleUploadCustom}
+                  />
+                </div>
+
+                <div className="space-y-6">
+                  {/* Pytanie 1: Tytuł */}
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                    <h3 className="font-bold text-sm text-slate-900 mb-3">
+                      1. Jaki jest tytuł tego dzieła?
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {advTitleOpts.map((opt, idx) => {
+                        let btnStyle = "bg-white border-slate-300 hover:bg-slate-100 text-slate-800";
+                        if (advChecked) {
+                          if (opt === advTarget.title) {
+                            btnStyle = "bg-emerald-100 border-emerald-500 text-emerald-900 font-bold";
+                          } else if (opt === advSelTitle) {
+                            btnStyle = "bg-rose-100 border-rose-500 text-rose-900 font-semibold";
+                          } else {
+                            btnStyle = "bg-white border-slate-200 text-slate-400 opacity-70";
+                          }
+                        } else if (opt === advSelTitle) {
+                          btnStyle = "bg-indigo-50 border-indigo-500 text-indigo-900 font-semibold ring-1 ring-indigo-500";
+                        }
+                        return (
+                          <button
+                            key={idx}
+                            disabled={advChecked}
+                            onClick={() => setAdvSelTitle(opt)}
+                            className={`p-3 rounded-lg border text-left text-xs sm:text-sm transition ${btnStyle}`}
+                          >
+                            {opt}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Pytanie 2: Autor */}
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                    <h3 className="font-bold text-sm text-slate-900 mb-3">
+                      2. Kto jest autorem dzieła?
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {advAuthorOpts.map((opt, idx) => {
+                        let btnStyle = "bg-white border-slate-300 hover:bg-slate-100 text-slate-800";
+                        if (advChecked) {
+                          if (opt === advTarget.author) {
+                            btnStyle = "bg-emerald-100 border-emerald-500 text-emerald-900 font-bold";
+                          } else if (opt === advSelAuthor) {
+                            btnStyle = "bg-rose-100 border-rose-500 text-rose-900 font-semibold";
+                          } else {
+                            btnStyle = "bg-white border-slate-200 text-slate-400 opacity-70";
+                          }
+                        } else if (opt === advSelAuthor) {
+                          btnStyle = "bg-indigo-50 border-indigo-500 text-indigo-900 font-semibold ring-1 ring-indigo-500";
+                        }
+                        return (
+                          <button
+                            key={idx}
+                            disabled={advChecked}
+                            onClick={() => setAdvSelAuthor(opt)}
+                            className={`p-3 rounded-lg border text-left text-xs sm:text-sm transition ${btnStyle}`}
+                          >
+                            {opt}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Pytanie 3: Czas powstania */}
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                    <h3 className="font-bold text-sm text-slate-900 mb-3">
+                      3. Kiedy powstało dzieło?
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {advYearOpts.map((opt, idx) => {
+                        let btnStyle = "bg-white border-slate-300 hover:bg-slate-100 text-slate-800";
+                        if (advChecked) {
+                          if (opt === advTarget.year) {
+                            btnStyle = "bg-emerald-100 border-emerald-500 text-emerald-900 font-bold";
+                          } else if (opt === advSelYear) {
+                            btnStyle = "bg-rose-100 border-rose-500 text-rose-900 font-semibold";
+                          } else {
+                            btnStyle = "bg-white border-slate-200 text-slate-400 opacity-70";
+                          }
+                        } else if (opt === advSelYear) {
+                          btnStyle = "bg-indigo-50 border-indigo-500 text-indigo-900 font-semibold ring-1 ring-indigo-500";
+                        }
+                        return (
+                          <button
+                            key={idx}
+                            disabled={advChecked}
+                            onClick={() => setAdvSelYear(opt)}
+                            className={`p-3 rounded-lg border text-left text-xs sm:text-sm transition ${btnStyle}`}
+                          >
+                            {opt}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                                  {/* Pytanie 4: Epoka */}
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                    <h3 className="font-bold text-sm text-slate-900 mb-3">
+                      4. Do jakiej epoki należy dzieło?
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {advEpochOpts.map((opt, idx) => {
+                        let btnStyle = "bg-white border-slate-300 hover:bg-slate-100 text-slate-800";
+                        if (advChecked) {
+                          if (opt === advTarget.epoch) {
+                            btnStyle = "bg-emerald-100 border-emerald-500 text-emerald-900 font-bold";
+                          } else if (opt === advSelEpoch) {
+                            btnStyle = "bg-rose-100 border-rose-500 text-rose-900 font-semibold";
+                          } else {
+                            btnStyle = "bg-white border-slate-200 text-slate-400 opacity-70";
+                          }
+                        } else if (opt === advSelEpoch) {
+                          btnStyle = "bg-indigo-50 border-indigo-500 text-indigo-900 font-semibold ring-1 ring-indigo-500";
+                        }
+                        return (
+                          <button
+                            key={idx}
+                            disabled={advChecked}
+                            onClick={() => setAdvSelEpoch(opt)}
+                            className={`p-3 rounded-lg border text-left text-xs sm:text-sm transition ${btnStyle}`}
+                          >
+                            {opt}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Przycisk sprawdzenia */}
+                <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100">
+                  {!advChecked ? (
+                    <button
+                      disabled={!advSelTitle || !advSelAuthor || !advSelYear || !advSelEpoch}
+                      onClick={() => setAdvChecked(true)}
+                      className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-8 py-3 rounded-xl text-sm font-bold shadow transition"
+                    >
+                      Sprawdź odpowiedzi
+                    </button>
+                  ) : (
+                    <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div className="text-sm font-semibold">
+                        {advSelTitle === advTarget.title && advSelAuthor === advTarget.author && advSelYear === advTarget.year && advSelEpoch === advTarget.epoch ? (
+                          <span className="text-emerald-700">🎉 Wszystkie 4 odpowiedzi są poprawne!</span>
+                        ) : (
+                          <span className="text-amber-700">🔍 Sprawdź podświetlenia (zielone = poprawne, czerwone = Twoje błędne).</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => speakArtwork(advTarget)}
+                          title="Posłuchaj odpowiedzi"
+                          className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-slate-950 px-4 py-3 rounded-xl text-sm font-bold shadow transition"
+                        >
+                          🔊 Posłuchaj odpowiedzi
+                        </button>
+                        <button
+                          onClick={generateAdvancedQuiz}
+                          className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-xl text-sm font-bold shadow transition"
+                        >
+                          Następne dzieło →
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === "truefalse" && (
+
+              <div className="max-w-2xl mx-auto">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-md p-6">
+                  <div className="flex justify-between items-center text-xs font-semibold text-slate-500 pb-4 border-b border-slate-100">
+                    <span>Część 2 egzaminu: JAK? (Charakterystyka stylów)</span>
+                    <span>Wynik: {tfScore.correct} / {tfScore.total}</span>
+                  </div>
+
+                  <div className="py-6">
+                    <span className="inline-block text-xs font-bold px-3 py-1 rounded-full bg-amber-100 text-amber-800 mb-3">
+                      {currentTf.epoch}
+                    </span>
+                    <p className="text-lg font-medium text-slate-900 leading-relaxed">
+                      „{currentTf.statement}”
+                    </p>
+                  </div>
+
+                  {tfAnswer === null ? (
+                    <div className="grid grid-cols-2 gap-4">
+                      <button
+                        onClick={() => {
+                          setTfAnswer(true);
+                          setTfScore(p => ({ correct: p.correct + (currentTf.isTrue === true ? 1 : 0), total: p.total + 1 }));
+                        }}
+                        className="py-4 rounded-xl bg-emerald-50 hover:bg-emerald-100 border-2 border-emerald-400 text-emerald-900 font-bold text-base transition"
+                      >
+                        ✅ PRAWDA
+                      </button>
+                      <button
+                        onClick={() => {
+                          setTfAnswer(false);
+                          setTfScore(p => ({ correct: p.correct + (currentTf.isTrue === false ? 1 : 0), total: p.total + 1 }));
+                        }}
+                        className="py-4 rounded-xl bg-rose-50 hover:bg-rose-100 border-2 border-rose-400 text-rose-900 font-bold text-base transition"
+                      >
+                        ❌ FAŁSZ
+                      </button>
+                    </div>
+                  ) : (
+                    <div className={`p-4 rounded-xl border ${
+                      tfAnswer === currentTf.isTrue ? "bg-emerald-50 border-emerald-300" : "bg-rose-50 border-rose-300"
+                    }`}>
+                      <div className="font-bold text-sm mb-1">
+                        {tfAnswer === currentTf.isTrue ? "🎉 Dobrze!" : "⚠️ Błędna odpowiedź!"}
+                      </div>
+                      <p className="text-sm text-slate-800">{currentTf.explanation}</p>
+                      <button
+                        onClick={() => { setTfAnswer(null); setTfIndex(prev => prev + 1); }}
+                        className="mt-4 bg-slate-900 text-white px-5 py-2 rounded-lg text-sm font-semibold"
+                      >
+                        Następne stwierdzenie →
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === "epochs" && (
+              <div className="space-y-3 max-w-4xl mx-auto">
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-950 mb-4">
+                  <strong>Wskazówka egzaminacyjna:</strong> W przypadku <strong>Średniowiecza</strong> (Bizancjum, sztuka preromańska, styl romański, gotyk) oraz <strong>Awangardy i ikon designu</strong> wymagane jest dokładne podanie konkretnego nurtu/stylu.
+                </div>
+                {EPOCHS.map(ep => (
+                  <div key={ep.name} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 justify-between">
+                    <div className="md:w-1/3">
+                      <span className="text-xs font-bold text-indigo-600 uppercase">Epoka {ep.order}</span>
+                      <h3 className="text-lg font-bold text-slate-900">{ep.name}</h3>
+                      <p className="text-xs font-semibold text-slate-500 mt-0.5">{ep.time}</p>
+                    </div>
+                    <div className="md:w-2/3 text-sm text-slate-700 leading-relaxed border-t md:border-t-0 md:border-l border-slate-100 pt-3 md:pt-0 md:pl-5">
+                      {ep.traits}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </main>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+Wgraj index.html, manifest.json, sw.js, icon.png i icon-192.png do katalogu głównego repozytorium. GitHub Settings > Pages > Deploy from a branch > main > /(root). Aplikacja wymaga internetu do załadowania bibliotek React, Babel, Tailwind i zdjęć; tryb offline nie jest w pełni obsługiwany.

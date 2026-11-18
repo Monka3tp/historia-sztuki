@@ -1,0 +1,22 @@
+{
+  "name": "Historia Sztuki i Designu",
+  "short_name": "Sztuka Egzamin",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#650d2e",
+  "theme_color": "#650d2e",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
